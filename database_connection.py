@@ -1,7 +1,6 @@
-from select import error
-
 import mysql.connector
 import os
+import pandas as pd
 
 from mysql.connector import connect
 
@@ -42,6 +41,8 @@ def Registrar_Persona(correo,username,contraseña):
         result = True
 
     finally:
+        cursor.close()
+        db.close()
         return result
 
 
@@ -59,6 +60,8 @@ def Validar_Existencia_Correo(correo):
         for data in cursor:
             result = data
     finally:
+        cursor.close()
+        database.close()
         return result
 
 
@@ -76,6 +79,94 @@ def Login(correo,password):
         for data in cursor:
             result = data
     finally:
+        cursor.close()
+        database.close()
         return result
 
+
+
+
+
+# MENU PARA ADMIN
+
+
+
+def Listar_Personas():
+    db = Connect_Database()
+    cursor = db.cursor()
+    query = """SELECT * FROM persona"""
+    try:
+        cursor.execute(query)
+    except:
+        result = False
+    else:
+        registros = cursor.fetchall()
+        columnas = [desc[0] for desc in cursor.description] # Obtener los nombres de columna
+        result = pd.DataFrame(registros,columns= columnas)
+    finally:
+        cursor.close()
+        db.close()
+        return result
+
+
+
+def Buscar_Usuario_Correo(correo):
+    db = Connect_Database()
+    cursor = db.cursor()
+    query = """SELECT usuario_id, correo FROM persona WHERE correo = %s """
+    value = (correo,)
+    try:
+        cursor.execute(query,value)
+    except:
+        result = False
+    else:
+        registros = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        result = pd.DataFrame(registros, columns= columns)
+    finally:
+        cursor.close()
+        db.close()
+        return result
+
+
+def Buscar_usario_id(id):
+    db = Connect_Database()
+    cursor = db.cursor()
+    query = """SELECT usuario_id,correo FROM persona WHERE usuario_id = %s """
+    value = (id,)
+    try:
+        cursor.execute(query, value)
+    except:
+        result = False
+    else:
+        registros = cursor.fetchall()
+        columns = [desc[0] for desc in cursor.description]
+        result = pd.DataFrame(registros, columns=columns)
+    finally:
+        cursor.close()
+        db.close()
+        return result
+
+
+def Eliminar_Usuario(id):
+    db = Connect_Database()
+    cursor = db.cursor()
+    query = """DELETE FROM persona WHERE usuario_id = %s"""
+    value = (id,)
+
+    usuario = Buscar_usario_id(id)
+    #SI EL USUARIO NO SE ENCUENTRA PAILA
+    if usuario.empty:
+        return []
+    else:
+        try:
+            cursor.execute(query,value)
+        except:
+            db.rollback()
+            result = False
+        else:
+            result = True
+            db.commit()
+        finally:
+            return result
 
